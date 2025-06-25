@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nava PWA</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0047AB">
+</head>
+<body>
+    <h2>نوا اپ تحت وب</h2>
+    <input type="text" id="key" placeholder="کلید خصوصی">
+    <br><br>
+    <textarea id="message" placeholder="پیام خود را وارد کنید..."></textarea>
+    <br><br>
+    <button onclick="sendMessage()">ارسال پیام</button>
+    <p id="responseBox">⏳ منتظر پاسخ...</p>
+
+    <script>
+        async function sendMessage() {
+            const key = document.getElementById('key').value;
+            const message = document.getElementById('message').value;
+            document.getElementById('responseBox').innerText = "⏳ در حال ارسال...";
+
+            await fetch("https://f079f5f1-5033-4546-b6a3-c9bd16e25fe4-00-3f4e1oa182r9b.spock.replit.dev/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key, message })
+            });
+
+            checkResponse(key);
+        }
+
+        async function checkResponse(key) {
+            const responseBox = document.getElementById('responseBox');
+            let attempts = 0;
+
+            const interval = setInterval(async () => {
+                const res = await fetch(`https://f079f5f1-5033-4546-b6a3-c9bd16e25fe4-00-3f4e1oa182r9b.spock.replit.dev/get_response/${key}`);
+                const data = await res.json();
+
+                if (!data.pending) {
+                    clearInterval(interval);
+                    responseBox.innerText = "📩 پاسخ: " + data.reply;
+                } else {
+                    responseBox.innerText = "⏳ منتظر پاسخ...";
+                }
+
+                if (++attempts > 12) {
+                    clearInterval(interval);
+                    responseBox.innerText = "❌ پاسخی دریافت نشد.";
+                }
+            }, 4000);
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(function(registration) {
+                console.log('ServiceWorker ثبت شد:', registration.scope);
+            });
+        }
+    </script>
+</body>
+</html>
